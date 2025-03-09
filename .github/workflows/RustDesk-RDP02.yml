@@ -46,7 +46,7 @@ jobs:
       - name: Install RustDesk
         run: |
           Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/download/1.3.8/rustdesk-1.3.8-x86_64.exe" -OutFile "rustdesk.exe"
-          Start-Process -FilePath .\rustdesk.exe -ArgumentList "/S" -NoNewWindow -Wait
+          Start-Process -FilePath .\rustdesk.exe -ArgumentList "--silent" -NoNewWindow -Wait
           echo "RustDesk Installed"
 
       - name: Get RustDesk ID and Password
