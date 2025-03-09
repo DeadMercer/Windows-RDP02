@@ -24,7 +24,7 @@ jobs:
 
       - name: Create and Configure RDP User
         run: |
-          net user winmine 24498! /add
+          net user winmine 244098! /add
           net localgroup Administrators winmine /add
           echo "User winmine created and added to Administrators group"
 
