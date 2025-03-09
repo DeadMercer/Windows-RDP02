@@ -1,66 +1,26 @@
-name: Windows - Persistent RDP
+name: Windows - RustDesk
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Start RDP Session
+    name: Start Building...
     runs-on: windows-latest
-    timeout-minutes: 9999  # Keep session running
-
+    timeout-minutes: 9999
+    
     steps:
-      - name: Get Public IP Address
+      - name: Downloading & Installing Essentials
         run: |
-          curl ifconfig.me > ip.txt
-          echo "Public IP Address: $(cat ip.txt)"
+          Invoke-WebRequest -Uri "https://drive.google.com/file/d/1V3Qn4uNzXivSBB1x5cjjpXVYnzI7mKgJ/view?usp=sharing" -OutFile "Downloads.bat"
+          cmd /c Downloads.bat
 
-      - name: Enable Remote Desktop (RDP)
-        run: |
-          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
-          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
-          netsh advfirewall firewall add rule name="Allow RDP" protocol=TCP dir=in localport=3389 action=allow
-          netsh advfirewall firewall set rule group="Remote Desktop" new enable=Yes
-          echo "RDP Enabled Successfully"
-      
-      - name: Restart RDP Service
-        run: |
-          net stop TermService /y
-          net start TermService
-          echo "RDP Service Restarted"
+      - name: Log In To AnyDesk
+        run: cmd /c show.bat
 
-      - name: Create and Configure RDP User
-        run: |
-          net user winmine Wmine@24$ /add
-          net localgroup Administrators winmine /add
-          net localgroup "Remote Desktop Users" winmine /add
-          echo "User winmine created and added to Remote Desktop Users"
-
-      - name: Display Login Credentials
-        run: |
-          echo "Use the following credentials to connect:"
-          echo "Username: winmine"
-          echo "Password: Wmine@24$"
-          echo "Public IP: $(cat ip.txt)"
-
-      - name: Install RustDesk
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/download/1.3.8/rustdesk-1.3.8-x86_64.exe" -OutFile "rustdesk.exe"
-          Start-Process -FilePath .\rustdesk.exe -ArgumentList "--silent" -NoNewWindow -Wait
-          echo "RustDesk Installed"
-
-      - name: Get RustDesk ID and Password
-        run: |
-          Start-Sleep -Seconds 10  # Wait for RustDesk to start
-          $RustDeskID = Get-Content "$env:APPDATA\RustDesk\id"
-          $RustDeskPassword = Get-Content "$env:APPDATA\RustDesk\id_ed25519"
-          echo "RustDesk ID: $RustDeskID"
-          echo "RustDesk Password: $RustDeskPassword"
-
-      - name: Start RustDesk on Boot
-        run: |
-          schtasks /create /tn "RustDeskStartup" /tr "C:\Users\runneradmin\AppData\Roaming\RustDesk\rustdesk.exe" /sc onlogon /rl highest
+      - name: Time Counter
+        run: python time.py
 
       - name: Keep Session Active
         run: |
-          while ($true) { Start-Sleep -Seconds 3600 }
+          while ($true) { Start-Sleep -Seconds 3600 }  
