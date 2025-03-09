@@ -7,28 +7,42 @@ jobs:
   build:
     name: Start RDP Session
     runs-on: windows-latest
-    timeout-minutes: 9999  # Ensures the workflow runs indefinitely
+    timeout-minutes: 9999  # Keep session running
 
     steps:
       - name: Get Public IP Address
         run: |
-          echo "Fetching Public IP..."
           curl ifconfig.me > ip.txt
           echo "Public IP Address: $(cat ip.txt)"
 
       - name: Enable Remote Desktop (RDP)
         run: |
           reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
+          netsh advfirewall firewall add rule name="Allow RDP" protocol=TCP dir=in localport=3389 action=allow
           netsh advfirewall firewall set rule group="Remote Desktop" new enable=Yes
           echo "RDP Enabled Successfully"
+      
+      - name: Restart RDP Service
+        run: |
+          net stop TermService /y
+          net start TermService
+          echo "RDP Service Restarted"
 
       - name: Create and Configure RDP User
         run: |
           net user winmine Wmine@24$ /add
           net localgroup Administrators winmine /add
-          echo "User winmine created and added to Administrators group"
+          net localgroup "Remote Desktop Users" winmine /add
+          echo "User winmine created and added to Remote Desktop Users"
+
+      - name: Display Login Credentials
+        run: |
+          echo "Use the following credentials to connect:"
+          echo "Username: winmine"
+          echo "Password: Wmine@24$"
+          echo "Public IP: $(cat ip.txt)"
 
       - name: Keep Session Active
         run: |
-          echo "Keeping RDP session alive..."
           while ($true) { Start-Sleep -Seconds 3600 }
