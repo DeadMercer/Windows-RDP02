@@ -1,24 +1,43 @@
-name: RustDesk RDP
-
+name: Windows RDP
 on: workflow_dispatch
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    name: Start RDP Session
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    
     steps:
-      - name: Install RDP and RustDesk
+      - name: Setup RDP
         run: |
-          sudo apt update
-          sudo apt install -y xfce4 xfce4-terminal xrdp wget
-          sudo systemctl enable xrdp
-          sudo systemctl start xrdp
+          net user winmine /add
+          net user winmine 24498
+          net localgroup administrators winmine /add
+          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          Enable-PSRemoting -Force
+          Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name fDenyTSConnections -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Restart-Computer -Force
+      
+      
+      - name: Get Public IP
+        run: curl ifconfig.me
 
-          # Install RustDesk
-          wget https://github.com/rustdesk/rustdesk/releases/download/1.3.8/rustdesk-1.3.8-x86_64.deb
-          sudo dpkg -i rustdesk-1.3.8-x86_64.deb || sudo apt -f install -y
+      - name: Enable RDP
+        run: |
+          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          netsh advfirewall firewall set rule group="Remote Desktop" new enable=Yes
+
+      - name: Set RDP User Password
+        run: |
+          net user winmine 24498
+
+      - name: Keep RDP Running
+        run: |
+          while ($true) { Start-Sleep -Seconds 3600 }
+
           
-          # Start RustDesk
-          nohup rustdesk > /dev/null 2>&1 &
 
-          echo "RustDesk is now running!"
+
+
+
